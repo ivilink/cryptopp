@@ -1,7 +1,7 @@
 CXXFLAGS = -DNDEBUG -g -O2
 #CXXFLAGS = -g
 # -fPIC is supported. Please report any breakage of -fPIC as a bug.
-# CXXFLAGS += -fPIC
+CXXFLAGS += -fPIC
 # the following options reduce code size, but breaks link or makes link very slow on some systems
 # CXXFLAGS += -ffunction-sections -fdata-sections
 # LDFLAGS += -Wl,--gc-sections
@@ -37,7 +37,8 @@ ifneq ($(GCC42_OR_LATER),0)
 ifeq ($(UNAME),Darwin)
 CXXFLAGS += -arch x86_64 -arch i386
 else
-CXXFLAGS += -march=native
+# Disabled due to errors of architecture detection on some of our testing environments. PIlin, 02.08.2012
+#CXXFLAGS += -march=native
 endif
 endif
 
@@ -131,7 +132,47 @@ LIBIMPORTOBJS = $(LIBOBJS:.o=.import.o)
 TESTIMPORTOBJS = $(TESTOBJS:.o=.import.o)
 DLLTESTOBJS = dlltest.dllonly.o
 
+LIBSRCS_RSA := 
+LIBSRCS_RSA += algebra.cpp
+LIBSRCS_RSA += algparam.cpp
+LIBSRCS_RSA += asn.cpp
+LIBSRCS_RSA += basecode.cpp
+LIBSRCS_RSA += cpu.cpp
+LIBSRCS_RSA += cryptlib.cpp
+LIBSRCS_RSA += dll.cpp
+LIBSRCS_RSA += dsa.cpp
+LIBSRCS_RSA += ec2n.cpp
+LIBSRCS_RSA += ecp.cpp
+LIBSRCS_RSA += filters.cpp
+LIBSRCS_RSA += fips140.cpp
+LIBSRCS_RSA += gf2n.cpp
+LIBSRCS_RSA += gfpcrypt.cpp
+LIBSRCS_RSA += hex.cpp
+LIBSRCS_RSA += hmac.cpp
+LIBSRCS_RSA += hrtimer.cpp
+LIBSRCS_RSA += integer.cpp
+LIBSRCS_RSA += iterhash.cpp
+LIBSRCS_RSA += misc.cpp
+LIBSRCS_RSA += modes.cpp
+LIBSRCS_RSA += mqueue.cpp
+LIBSRCS_RSA += nbtheory.cpp
+LIBSRCS_RSA += oaep.cpp
+LIBSRCS_RSA += osrng.cpp
+LIBSRCS_RSA += pkcspad.cpp
+LIBSRCS_RSA += pubkey.cpp
+LIBSRCS_RSA += queue.cpp
+LIBSRCS_RSA += randpool.cpp
+LIBSRCS_RSA += rdtables.cpp
+LIBSRCS_RSA += rijndael.cpp
+LIBSRCS_RSA += rng.cpp
+LIBSRCS_RSA += rsa.cpp
+LIBSRCS_RSA += sha.cpp
+
+LIBOBJS_RSA = $(LIBSRCS_RSA:.cpp=.o)
+
 all: cryptest.exe
+
+rsa: libcryptopp_rsa.a libcryptopp_rsa.so
 
 test: cryptest.exe
 	./cryptest.exe v
@@ -145,6 +186,13 @@ install:
 	$(CP) *.a $(PREFIX)/lib
 	$(CP) *.so $(PREFIX)/lib
 	$(CP) *.exe $(PREFIX)/bin
+
+libcryptopp_rsa.a: $(LIBOBJS_RSA)
+	$(AR) $(ARFLAGS) $@ $(LIBOBJS_RSA)
+	$(RANLIB) $@
+
+libcryptopp_rsa.so: $(LIBOBJS_RSA)
+	$(CXX) -shared -Wl,--no-undefined -o $@ $(LIBOBJS_RSA)
 
 libcryptopp.a: $(LIBOBJS)
 	$(AR) $(ARFLAGS) $@ $(LIBOBJS)
@@ -192,3 +240,5 @@ endif
 
 %.o : %.cpp
 	$(CXX) $(CXXFLAGS) -c $<
+
+.PHONY: all rsa test clean install nolib dll 
